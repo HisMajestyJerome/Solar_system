@@ -1,6 +1,9 @@
 import pygame
 import sys
+import random
 
+
+WIDTH, HEIGHT = 1920, 600
 # ─── Data ──────────────────────────────────────────────────────────────────────
 Planets = {
     "Mercury": (2439.7,   57.9,   (169, 169, 169)),
@@ -35,12 +38,26 @@ Moons = {
     "Larissa":   (  97.0,   0.073,   (190, 190, 190), "Neptune"),
 }
 
+
+number_of_stars = 10000
+stars = []
+
+for _ in range(number_of_stars):
+    star_x = random.uniform(-WIDTH * 2, WIDTH * 3)  # spread over large area
+    star_y = random.randint(0, HEIGHT)
+    star_radius = random.choice([0.5, 1])
+    star_color = (random.randint(50, 120),) * 3  # dim white
+    parallax_factor = random.uniform(0.05, 0.5)
+    stars.append((star_x, star_y, star_radius, star_color, parallax_factor))
+
+
+
 SUN_RADIUS_KM = 695700
 SUN_COLOR = (255, 255, 0)
 
 # ─── Pygame Setup ───────────────────────────────────────────────────────────────
 pygame.init()
-WIDTH, HEIGHT = 1920, 600
+
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("1D Solar System (Proper KM Scale)")
 clock = pygame.time.Clock()
@@ -54,6 +71,7 @@ scale = min_scale
 max_scale = 200000 * min_scale  # allow zooming in
 
 offset_x = margin
+
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────────
 def world_to_screen(dist_mkm):
@@ -82,6 +100,7 @@ while running:
             scale *= 1 + event.y * 0.1
             scale = max(min_scale, min(max_scale, scale))
             offset_x = mx - world_x_km * scale
+            
 
         # Dragging with mouse
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -113,11 +132,16 @@ while running:
                     set_minimum_size = True
     if dragging:
         mx = pygame.mouse.get_pos()[0]
-        offset_x += (mx - last_mouse_x)
+        dx = mx - last_mouse_x
+        offset_x += dx
         last_mouse_x = mx
 
     # ─── Draw ────────────────────────────────────────────────────────────────────
     screen.fill((0, 0, 0))
+    for x, y, r, color, parallax in stars:
+        sx = x + offset_x * parallax
+        if -10 <= sx <= WIDTH + 10:
+            pygame.draw.circle(screen, color, (int(sx), int(y)), r)
 
     # Sun
     sun_x = world_to_screen(0)
